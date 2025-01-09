@@ -10,7 +10,7 @@ const (
 )
 
 type OKLinkService interface {
-	GetFractalBitcoinBRC20TransactionDetail(ctx context.Context, txId string) (OKLinkBRC20TransactionDetail, error)
+	GetFractalBitcoinBRC20TransactionDetail(ctx context.Context, txId string, opts ...func(*Option)) (OKLinkBRC20TransactionDetail, error)
 	GetFractalBitcoinBRC20TransactionDetailBatch(ctx context.Context, txIds []string, opts ...func(*Option)) <-chan OKLinkBRC20TransactionDetailBatch
 }
 
@@ -59,5 +59,32 @@ type OKLinkBRC20TransactionDetailBatch struct {
 }
 
 type UnisatService interface {
-	GetWithdrawTransactions(ctx context.Context) []string
+	GetWithdrawTransactionsFromFile(ctx context.Context) []string
+	FollowWithdrawTransactions(ctx context.Context) <-chan UnisatWithdrawTransaction
+}
+
+type UnisatWithdrawTransaction struct {
+	Type              string `json:"type"`
+	Valid             bool   `json:"valid"`
+	TxId              string `json:"txid"`
+	Idx               int    `json:"idx"`
+	Vout              int    `json:"vout"`
+	Offset            int    `json:"offset"`
+	InscriptionNumber int    `json:"inscriptionNumber"`
+	InscriptionId     string `json:"inscriptionId"`
+	ContentType       string `json:"contentType"`
+	ContentBody       string `json:"contentBody"`
+	OldSatPoint       string `json:"oldSatPoint"`
+	NewSatPoint       string `json:"newSatPoint"`
+	From              string `json:"from"`
+	To                string `json:"to"`
+	Satoshi           uint64 `json:"satoshi"`
+	Data              struct {
+		Tick   string `json:"tick"`
+		Amount string `json:"amount"`
+	} `json:"data"`
+	Height    int    `json:"height"`
+	TxIdx     int    `json:"txidx"`
+	BlockHash string `json:"blockhash"`
+	BlockTime int    `json:"blocktime"`
 }

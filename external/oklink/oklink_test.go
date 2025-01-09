@@ -9,7 +9,7 @@ import (
 )
 
 func newSvc() *Service {
-	return New(config.New().OkLinkConfig)
+	return New(config.New("../../config.yaml").OkLinkConfig)
 }
 
 func TestGetFractalBitcoinBRC20TransactionDetail(t *testing.T) {

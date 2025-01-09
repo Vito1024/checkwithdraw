@@ -1,0 +1,11 @@
+unisat:
+  host: "http://localhost:6082"
+
+oklink:
+  host: "https://www.oklink.com"
+  key: ""
+
+check_withdraw:
+  excluded_addresses:
+    - bc1q76qc3rxsy5v764n24q6un3n9yzfker8y9dmrxy
+    - bc1q6n55n8xuexk4gsp67htsp65kvvrnzmxzc23sl6

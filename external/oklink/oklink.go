@@ -28,7 +28,7 @@ func New(config config.OkLinkConfig) *Service {
 		config: config,
 		httpClient: resty.New().
 			SetTimeout(defaultTimeout).
-			SetRetryCount(10000). // oklink免费版，限速3/s
+			SetRetryCount(100). // oklink免费版，限速3/s
 			SetRetryWaitTime(500 * time.Millisecond).
 			AddRetryCondition(func(response *resty.Response, err error) bool {
 				// network error
@@ -44,8 +44,16 @@ func New(config config.OkLinkConfig) *Service {
 // GetFractalBitcoinTransactionDetail 获取交易详情
 // Doc: https://www.oklink.com/docs/zh/#quickstart-guide-api-authentication
 // Doc: https://www.oklink.com/docs/zh/#btc-inscription-data-get-inscription-token-transaction-details-for-specific-hash
-func (svc *Service) GetFractalBitcoinBRC20TransactionDetail(ctx context.Context, txId string) (withdraw.OKLinkBRC20TransactionDetail, error) {
+func (svc *Service) GetFractalBitcoinBRC20TransactionDetail(ctx context.Context, txId string, options ...func(*withdraw.Option)) (withdraw.OKLinkBRC20TransactionDetail, error) {
 	path := "/api/v5/explorer/inscription/transaction-detail"
+
+	var option withdraw.Option
+	for _, opt := range options {
+		opt(&option)
+	}
+	if option.RateLimit {
+		time.Sleep(intervalWithoutReachLimit)
+	}
 
 	var okxResponse struct {
 		Code string `json:"code"`
@@ -58,7 +66,7 @@ func (svc *Service) GetFractalBitcoinBRC20TransactionDetail(ctx context.Context,
 		} `json:"data"`
 	}
 	resp, err := svc.httpClient.R().
-		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.ApiKey).
+		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.Key).
 		SetQueryParams(map[string]string{
 			"chainShortName": "FRACTAL",
 			"protocolType":   "brc20",
@@ -154,7 +162,7 @@ func (svc *Service) GetFractalBitcoinAddressTokenTransactionList(ctx context.Con
 		} `json:"data"`
 	}
 	resp, err := svc.httpClient.R().
-		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.ApiKey).
+		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.Key).
 		SetQueryParams(map[string]string{
 			"chainShortName":     "FRACTAL",
 			"address":            address,
@@ -194,7 +202,7 @@ func (svc *Service) GetFractalBitcoinInscriptionHolderList(ctx context.Context, 
 		} `json:"data"`
 	}
 	resp, err := svc.httpClient.R().
-		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.ApiKey).
+		SetHeader(HEADER_OK_ACCESS_KEY, svc.config.Key).
 		SetQueryParams(map[string]string{
 			"chainShortName": "FRACTAL",
 			"address":        address,
@@ -255,7 +263,7 @@ func (svc *Service) GetFractalBitcoinAddressBrc20InscriptionList(ctx context.Con
 			} `json:"data"`
 		}
 		resp, err := svc.httpClient.R().
-			SetHeader(HEADER_OK_ACCESS_KEY, svc.config.ApiKey).
+			SetHeader(HEADER_OK_ACCESS_KEY, svc.config.Key).
 			SetQueryParams(map[string]string{
 				"chainShortName": "FRACTAL",
 				"address":        address,

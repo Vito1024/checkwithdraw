@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"flag"
+	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 	"withdraw"
 	"withdraw/config"
 	"withdraw/external/oklink"
@@ -18,29 +21,35 @@ type dep struct {
 	oklinkSvc withdraw.OKLinkService
 }
 
+var configPath = flag.String("config", "", "config file path")
+
 func main() {
+	withdraw.ParseEnv()
+	flag.Parse()
+
 	var dep dep
 	dep.initConfig()
 	dep.initExternal()
 
-	withdrawSvc := checkallwithdraw.New(dep.oklinkSvc)
-	notInOKLinkTdIDs := withdrawSvc.FilterNotBRC20WithdrawByOKLink(context.Background(), dep.unisatSvc.GetWithdrawTransactions(context.Background())...)
+	ctx, cancel := context.WithCancel(context.Background())
 
-	bs, err := json.Marshal(notInOKLinkTdIDs)
-	if err != nil {
-		panic(err)
-	}
-	err = os.WriteFile("not_as_withdraw_by_oklink.json", bs, 0644)
-	if err != nil {
-		panic(err)
-	}
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT)
+	go func() {
+		s := <-sig
+		fmt.Printf("signal received: %v\n", s)
+		cancel()
+	}()
+
+	withdrawSvc := checkallwithdraw.New(dep.config.CheckWithdraw, dep.unisatSvc, dep.oklinkSvc)
+	withdrawSvc.FollowWithdrawTransactions(ctx)
 }
 
 func (d *dep) initConfig() {
-	d.config = config.New()
+	d.config = config.New(*configPath)
 }
 
 func (d *dep) initExternal() {
-	d.unisatSvc = unisat.New()
+	d.unisatSvc = unisat.New(d.config.UnisatConfig)
 	d.oklinkSvc = oklink.New(d.config.OkLinkConfig)
 }

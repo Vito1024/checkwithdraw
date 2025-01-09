@@ -1,19 +1,42 @@
 package config
 
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Config struct {
-	OkLinkConfig
+	CheckWithdraw `yaml:"check_withdraw"`
+	OkLinkConfig  `yaml:"oklink"`
+	UnisatConfig  `yaml:"unisat"`
 }
 
-func New() *Config {
-	return &Config{
-		OkLinkConfig: OkLinkConfig{
-			Host:   "https://www.oklink.com",
-			ApiKey: "77c8661f-4db1-4cef-81c8-b5e6b5a6dc22",
-		},
+func New(configFilepath string) *Config {
+	var config Config
+
+	bs, err := os.ReadFile(configFilepath)
+	if err != nil {
+		panic(err)
 	}
+
+	err = yaml.Unmarshal(bs, &config)
+	if err != nil {
+		panic(err)
+	}
+
+	return &config
 }
 
 type OkLinkConfig struct {
-	Host   string
-	ApiKey string
+	Host string `yaml:"host"`
+	Key  string `yaml:"key"`
+}
+
+type UnisatConfig struct {
+	Host string `yaml:"host"`
+}
+
+type CheckWithdraw struct {
+	ExcludedAddresses []string `yaml:"excluded_addresses"`
 }

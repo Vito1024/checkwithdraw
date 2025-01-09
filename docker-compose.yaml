@@ -1,0 +1,14 @@
+services:
+  checkwithdraw:
+    image: docker.io/dockervitomu/unisatd:checkwithdraw
+    volumes:
+      - ./config/config.yaml:/data/config.yaml
+      - ./start_cursor.yaml:/data/start_cursor.yaml
+    environment:
+      START_CURSOR: 21411
+    labels:
+      - "name=checkwithdraw"
+    logging:
+      driver: "json-file"
+      options:
+        labels: "name"
