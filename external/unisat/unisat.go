@@ -111,20 +111,19 @@ func (svc *Service) FollowWithdrawTransactions(ctx context.Context) <-chan withd
 				if resp.StatusCode() != 200 {
 					panic(fmt.Sprintf("resp code not 200, %+v", resp))
 				}
+				fmt.Printf("got %d withdraw tx from unisat, cursor: %d\n", len(unisatResponse.Data.Detail), START_CURSOR)
 
 				// tx 按时间升序
 				for _, tx := range unisatResponse.Data.Detail {
 					// 延后一下
 					{
 						blockTime := time.Unix(int64(tx.BlockTime), 0)
-						for {
-							if time.Since(blockTime) > time.Hour {
-								break
-							}
+						if time.Since(blockTime) < time.Minute*90 {
+							fmt.Printf("wait for tx %s(block time: %v) more confirmations\n", tx.TxId, blockTime)
 							select {
 							case <-ctx.Done():
 								return
-							case <-time.After(time.Minute):
+							case <-time.After(time.Minute*90 - time.Since(blockTime)):
 							}
 						}
 					}
@@ -133,7 +132,7 @@ func (svc *Service) FollowWithdrawTransactions(ctx context.Context) <-chan withd
 				START_CURSOR += len(unisatResponse.Data.Detail)
 
 				// empty
-				if len(unisatResponse.Data.Detail) < REQUEST_WITHDRAW_LIMIT {
+				if len(unisatResponse.Data.Detail) == 0 {
 					sleepWithContext(ctx, time.Minute)
 				}
 			}
